@@ -1,0 +1,60 @@
+#!/bin/sh
+#
+# Maven Wrapper Startup Script
+#
+# This script is used to download and run Maven without having it pre-installed.
+#
+
+set -e
+
+MAVEN_PROJECT_BASEDIR=${MAVEN_BASEDIR:-"$PWD"}
+WRAPPER_DIR="$MAVEN_PROJECT_BASEDIR/.mvn/wrapper"
+WRAPPER_JAR="$WRAPPER_DIR/maven-wrapper.jar"
+WRAPPER_PROPERTIES="$WRAPPER_DIR/maven-wrapper.properties"
+WRAPPER_URL="https://repo.maven.apache.org/maven2/org/apache/maven/wrapper/maven-wrapper/3.2.0/maven-wrapper-3.2.0.jar"
+DISTRIBUTION_URL="https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/3.9.6/apache-maven-3.9.6-bin.zip"
+
+# Download wrapper jar if not present
+if [ ! -f "$WRAPPER_JAR" ]; then
+    echo "Downloading Maven Wrapper JAR..."
+    mkdir -p "$WRAPPER_DIR"
+    if command -v curl >/dev/null 2>&1; then
+        curl -f -L -o "$WRAPPER_JAR" "$WRAPPER_URL"
+    elif command -v wget >/dev/null 2>&1; then
+        wget -q -O "$WRAPPER_JAR" "$WRAPPER_URL"
+    else
+        echo "Error: curl or wget required to download Maven Wrapper JAR"
+        exit 1
+    fi
+fi
+
+# Read distribution URL from properties file if it exists
+if [ -f "$WRAPPER_PROPERTIES" ]; then
+    DIST_URL=$(grep "^distributionUrl=" "$WRAPPER_PROPERTIES" | cut -d'=' -f2-)
+    if [ -n "$DIST_URL" ]; then
+        DISTRIBUTION_URL="$DIST_URL"
+    fi
+fi
+
+MAVEN_HOME="$WRAPPER_DIR/maven"
+
+# Extract Maven if not already present
+if [ ! -d "$MAVEN_HOME" ]; then
+    echo "Downloading and extracting Maven..."
+    mkdir -p "$WRAPPER_DIR"
+    TMP_ZIP="$WRAPPER_DIR/maven.zip"
+    if command -v curl >/dev/null 2>&1; then
+        curl -f -L -o "$TMP_ZIP" "$DISTRIBUTION_URL"
+    elif command -v wget >/dev/null 2>&1; then
+        wget -q -O "$TMP_ZIP" "$DISTRIBUTION_URL"
+    else
+        echo "Error: curl or wget required to download Maven distribution"
+        exit 1
+    fi
+    unzip -q "$TMP_ZIP" -d "$WRAPPER_DIR"
+    mv "$WRAPPER_DIR"/apache-maven-* "$MAVEN_HOME"
+    rm "$TMP_ZIP"
+fi
+
+# Run Maven
+exec "$MAVEN_HOME/bin/maven" "$@"
