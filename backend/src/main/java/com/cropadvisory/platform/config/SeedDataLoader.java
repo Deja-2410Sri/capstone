@@ -94,6 +94,7 @@ public class SeedDataLoader implements CommandLineRunner {
                 .lastName("User")
                 .role(Role.ROLE_ADMIN)
                 .enabled(true)
+                .emailVerified(true)
                 .build();
         admin = userRepository.save(admin);
         log.info("Admin account created: {}", adminEmail);
@@ -109,6 +110,7 @@ public class SeedDataLoader implements CommandLineRunner {
                 .phone("9876543210")
                 .role(Role.ROLE_FARMER)
                 .enabled(true)
+                .emailVerified(true)
                 .build();
         farmer = userRepository.save(farmer);
 
@@ -136,6 +138,7 @@ public class SeedDataLoader implements CommandLineRunner {
                 .phone("9876543211")
                 .role(Role.ROLE_EXPERT)
                 .enabled(true)
+                .emailVerified(true)
                 .build();
         expert = userRepository.save(expert);
 
@@ -207,3 +210,4 @@ public class SeedDataLoader implements CommandLineRunner {
         }
     }
 }
+

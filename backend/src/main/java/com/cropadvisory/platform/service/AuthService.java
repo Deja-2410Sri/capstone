@@ -3,6 +3,7 @@ package com.cropadvisory.platform.service;
 import com.cropadvisory.platform.dto.auth.AuthResponse;
 import com.cropadvisory.platform.dto.auth.LoginRequest;
 import com.cropadvisory.platform.dto.auth.RegisterRequest;
+import com.cropadvisory.platform.dto.auth.RegistrationResponse;
 import com.cropadvisory.platform.exception.BadRequestException;
 import com.cropadvisory.platform.exception.UnauthorizedException;
 import com.cropadvisory.platform.model.entity.FarmerProfile;
@@ -22,12 +23,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 
-/**
- * Service handling user authentication and registration.
- *
- * <p>Manages JWT-based authentication, user registration with role assignment,
- * and farmer profile creation for new registrations.</p>
- */
 @Service
 public class AuthService {
 
@@ -38,28 +33,24 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
+    private final EmailOtpService emailOtpService;
 
     public AuthService(UserRepository userRepository,
                        FarmerProfileRepository farmerProfileRepository,
                        PasswordEncoder passwordEncoder,
                        JwtService jwtService,
-                       AuthenticationManager authenticationManager) {
+                       AuthenticationManager authenticationManager,
+                       EmailOtpService emailOtpService) {
         this.userRepository = userRepository;
         this.farmerProfileRepository = farmerProfileRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.authenticationManager = authenticationManager;
+        this.emailOtpService = emailOtpService;
     }
 
-    /**
-     * Registers a new user with FARMER role.
-     *
-     * @param request the registration request containing user details
-     * @return authentication response with JWT token
-     * @throws BadRequestException if email is already registered
-     */
     @Transactional
-    public AuthResponse register(RegisterRequest request) {
+    public RegistrationResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new BadRequestException("Email is already registered");
         }
@@ -72,6 +63,7 @@ public class AuthService {
                 .phone(request.getPhone())
                 .role(Role.ROLE_FARMER)
                 .enabled(true)
+                .emailVerified(false)
                 .build();
 
         user = userRepository.save(user);
@@ -81,26 +73,15 @@ public class AuthService {
                 .build();
         farmerProfileRepository.save(farmerProfile);
 
-        String token = generateJwtToken(user);
-        log.info("New farmer registered: {}", user.getEmail());
+        emailOtpService.sendOtp(user);
+        log.info("Registration created; email verification pending for {}", user.getEmail());
 
-        return AuthResponse.builder()
-                .token(token)
-                .userId(user.getId())
+        return RegistrationResponse.builder()
                 .email(user.getEmail())
-                .firstName(user.getFirstName())
-                .lastName(user.getLastName())
-                .role(user.getRole())
+                .message("Registration created. Check your email for the verification code.")
                 .build();
     }
 
-    /**
-     * Authenticates a user and returns a JWT token.
-     *
-     * @param request the login request containing credentials
-     * @return authentication response with JWT token
-     * @throws UnauthorizedException if credentials are invalid
-     */
     public AuthResponse login(LoginRequest request) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
@@ -108,6 +89,10 @@ public class AuthService {
 
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new UnauthorizedException("Invalid credentials"));
+
+        if (!Boolean.TRUE.equals(user.getEmailVerified())) {
+            throw new BadRequestException("Please verify your email before logging in");
+        }
 
         String token = generateJwtToken(user);
         log.info("User logged in: {}", user.getEmail());
@@ -122,12 +107,6 @@ public class AuthService {
                 .build();
     }
 
-    /**
-     * Returns the current authenticated user's information.
-     *
-     * @param email the user's email from the JWT token
-     * @return user information
-     */
     public AuthResponse getCurrentUser(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UnauthorizedException("User not found"));
@@ -141,6 +120,17 @@ public class AuthService {
                 .build();
     }
 
+
+    @Transactional
+    public void verifyEmailOtp(String email, String otp) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BadRequestException("Invalid email or OTP"));
+        try {
+            emailOtpService.verifyOtp(user, otp);
+        } catch (IllegalArgumentException | IllegalStateException ex) {
+            throw new BadRequestException(ex.getMessage());
+        }
+    }
     private String generateJwtToken(User user) {
         return jwtService.generateToken(
                 Collections.singletonMap("userId", user.getId()),
@@ -152,3 +142,4 @@ public class AuthService {
         );
     }
 }
+

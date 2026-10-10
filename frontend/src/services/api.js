@@ -35,6 +35,7 @@ api.interceptors.response.use(
 export const authAPI = {
   login: (data) => api.post('/auth/login', data),
   register: (data) => api.post('/auth/register', data),
+  verifyOtp: (data) => api.post('/auth/verify-otp', data),
   getMe: () => api.get('/auth/me'),
 };
 
@@ -112,3 +113,4 @@ export const adminAPI = {
 };
 
 export default api;
+

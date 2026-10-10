@@ -56,6 +56,19 @@ public class User {
     @Column(nullable = false)
     private Boolean enabled = true;
 
+    @Builder.Default
+    @Column(name = "email_verified", nullable = false)
+    private Boolean emailVerified = false;
+
+    private String verificationOtpHash;
+
+    private java.time.LocalDateTime verificationOtpExpiresAt;
+
+    @Builder.Default
+    private Integer verificationOtpAttempts = 0;
+
+    private java.time.LocalDateTime verificationOtpLastSentAt;
+
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createdAt;
@@ -69,3 +82,7 @@ public class User {
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private ExpertProfile expertProfile;
 }
+
+
+
+
