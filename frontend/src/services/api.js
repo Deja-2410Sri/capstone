@@ -36,6 +36,7 @@ export const authAPI = {
   login: (data) => api.post('/auth/login', data),
   register: (data) => api.post('/auth/register', data),
   verifyOtp: (data) => api.post('/auth/verify-otp', data),
+  resendOtp: (email) => api.post('/auth/resend-otp', null, { params: { email } }),
   getMe: () => api.get('/auth/me'),
 };
 
@@ -113,4 +114,5 @@ export const adminAPI = {
 };
 
 export default api;
+
 
