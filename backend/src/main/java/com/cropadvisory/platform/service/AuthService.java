@@ -122,6 +122,17 @@ public class AuthService {
 
 
     @Transactional
+    public void resendEmailOtp(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BadRequestException("Invalid email"));
+        try {
+            emailOtpService.sendOtp(user);
+        } catch (IllegalArgumentException | IllegalStateException ex) {
+            throw new BadRequestException(ex.getMessage());
+        }
+    }
+
+    @Transactional
     public void verifyEmailOtp(String email, String otp) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new BadRequestException("Invalid email or OTP"));
@@ -142,4 +153,5 @@ public class AuthService {
         );
     }
 }
+
 

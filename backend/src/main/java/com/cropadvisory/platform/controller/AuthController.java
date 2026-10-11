@@ -31,6 +31,14 @@ public class AuthController {
                 .body(ApiResponse.success(response, "Verification code sent to your email"));
     }
 
+    @PostMapping("/resend-otp")
+    public ResponseEntity<ApiResponse<Void>> resendOtp(
+            @jakarta.validation.constraints.Email @jakarta.validation.constraints.NotBlank
+            @RequestParam String email) {
+        authService.resendEmailOtp(email);
+        return ResponseEntity.ok(ApiResponse.success(null, "Verification code sent if the email is eligible."));
+    }
+
     @PostMapping("/verify-otp")
     public ResponseEntity<ApiResponse<Void>> verifyOtp(
             @Valid @RequestBody VerifyOtpRequest request) {
@@ -51,3 +59,4 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 }
+
