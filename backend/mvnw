@@ -57,4 +57,4 @@ if [ ! -d "$MAVEN_HOME" ]; then
 fi
 
 # Run Maven
-exec "$MAVEN_HOME/bin/maven" "$@"
+exec "$MAVEN_HOME/bin/mvn" "$@"
